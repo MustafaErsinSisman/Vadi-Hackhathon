@@ -1,1 +1,1 @@
-# Vadi-Hackhathon-Hdincer-in-4-Atl-s-
+This project developed by Mustafa Ersin Şişman, Yunus Emre Ak, Baran Yaprak and Muhammed Efe Özdemir in Vadi Hackhathon.
