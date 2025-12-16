@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profilim - Video Galerisi</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<style>
+.profile-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    font-size: 18px;
+    cursor: pointer;
+    transition: transform 0.2s;
+    text-decoration: none;
+}
+
+.profile-icon:hover {
+    transform: scale(1.1);
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.profile-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 40px 20px;
+}
+
+.profile-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 15px;
+    padding: 40px;
+    color: white;
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+.profile-avatar {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 48px;
+    font-weight: bold;
+    color: #667eea;
+    margin: 0 auto 20px;
+    border: 4px solid rgba(255, 255, 255, 0.3);
+}
+
+.profile-name {
+    font-size: 28px;
+    margin-bottom: 10px;
+}
+
+.profile-stats {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    margin-top: 20px;
+}
+
+.stat-item {
+    text-align: center;
+}
+
+.stat-number {
+    font-size: 32px;
+    font-weight: bold;
+    display: block;
+}
+
+.stat-label {
+    font-size: 14px;
+    opacity: 0.9;
+}
+
+.upload-section {
+    background: white;
+    border-radius: 15px;
+    padding: 30px;
+    margin-bottom: 30px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.upload-section h2 {
+    margin-bottom: 20px;
+    color: #333;
+}
+
+.upload-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group label {
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #555;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+    padding: 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: border-color 0.3s;
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+.file-input-wrapper {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+    width: 100%;
+}
+
+.file-input-wrapper input[type=file] {
+    position: absolute;
+    left: -9999px;
+}
+
+.file-input-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    border: 2px dashed #667eea;
+    border-radius: 8px;
+    background: #f8f9ff;
+    cursor: pointer;
+    transition: all 0.3s;
+    gap: 10px;
+}
+
+.file-input-label:hover {
+    background: #eef0ff;
+    border-color: #764ba2;
+}
+
+.upload-icon {
+    font-size: 24px;
+}
+
+.upload-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 15px 30px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.upload-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+.my-videos-section {
+    background: white;
+    border-radius: 15px;
+    padding: 30px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.my-videos-section h2 {
+    margin-bottom: 20px;
+    color: #333;
+}
+
+.video-list {
+    display: grid;
+    gap: 20px;
+}
+
+.video-item {
+    display: flex;
+    gap: 20px;
+    padding: 15px;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    transition: all 0.3s;
+}
+
+.video-item:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    transform: translateY(-2px);
+}
+
+.video-item-thumbnail {
+    position: relative;
+    width: 200px;
+    height: 112px;
+    flex-shrink: 0;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.video-item-thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.video-item-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.video-item-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 8px;
+}
+
+.video-item-description {
+    color: #666;
+    font-size: 14px;
+    margin-bottom: 10px;
+}
+
+.video-item-meta {
+    display: flex;
+    gap: 20px;
+    font-size: 13px;
+    color: #888;
+}
+
+.video-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.btn-edit,
+.btn-delete {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s;
+}
+
+.btn-edit {
+    background: #667eea;
+    color: white;
+}
+
+.btn-edit:hover {
+    background: #5568d3;
+}
+
+.btn-delete {
+    background: #f44336;
+    color: white;
+}
+
+.btn-delete:hover {
+    background: #d32f2f;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #999;
+}
+
+.empty-icon {
+    font-size: 64px;
+    margin-bottom: 20px;
+}
+
+@media (max-width: 768px) {
+    .profile-stats {
+        gap: 20px;
+    }
+    
+    .video-item {
+        flex-direction: column;
+    }
+    
+    .video-item-thumbnail {
+        width: 100%;
+        height: 180px;
+    }
+}
+</style>
+</head>
+<body>
+<header>
+<div class="container">
+<div class="header-content">
+<div class="header-left">
+<h1>🎬 Video Galerisi</h1>
+<nav>
+<a href="/" class="nav-link">Ana Sayfa</a>
+<a href="{{ url_for('categories_page') }}" class="nav-link">Kategoriler</a>
+<a href="{{ url_for('about_page') }}" class="nav-link">Hakkında</a>
+</nav>
+</div>
+<a href="{{ url_for('profile_page') }}" class="profile-icon" title="Profilim">
+K
+</a>
+</div>
+</div>
+</header>
+
+<main class="profile-container">
+<div class="profile-header">
+<div class="profile-avatar">K</div>
+<h1 class="profile-name">Kullanıcı Adı</h1>
+<div class="profile-stats">
+<div class="stat-item">
+<span class="stat-number">{{ user_videos|length if user_videos else 0 }}</span>
+<span class="stat-label">Video</span>
+</div>
+<div class="stat-item">
+<span class="stat-number">{{ total_views or 0 }}</span>
+<span class="stat-label">Görüntülenme</span>
+</div>
+<div class="stat-item">
+<span class="stat-number">{{ total_likes or 0 }}</span>
+<span class="stat-label">Beğeni</span>
+</div>
+</div>
+</div>
+
+<div class="upload-section">
+<h2>📤 Yeni Video Yükle</h2>
+<form class="upload-form" action="{{ url_for('upload_video') }}" method="POST" enctype="multipart/form-data">
+<div class="form-group">
+<label for="video-file">Video Dosyası *</label>
+<div class="file-input-wrapper">
+<input type="file" id="video-file" name="video" accept="video/*" required>
+<label for="video-file" class="file-input-label">
+<span class="upload-icon">📁</span>
+<span>Video seçmek için tıklayın</span>
+</label>
+</div>
+</div>
+
+<div class="form-group">
+<label for="video-title">Video Başlığı *</label>
+<input type="text" id="video-title" name="title" placeholder="Videonuzun başlığını girin" required>
+</div>
+
+<div class="form-group">
+<label for="video-description">Açıklama</label>
+<textarea id="video-description" name="description" placeholder="Video hakkında açıklama yazın..."></textarea>
+</div>
+
+<div class="form-group">
+<label for="video-category">Kategori *</label>
+<select id="video-category" name="category" required>
+<option value="">Kategori seçin</option>
+<option value="Müzik">Müzik</option>
+<option value="Oyun">Oyun</option>
+<option value="Eğitim">Eğitim</option>
+<option value="Vlog">Vlog</option>
+<option value="Teknoloji">Teknoloji</option>
+<option value="Diğer">Diğer</option>
+</select>
+</div>
+
+<div class="form-group">
+<label for="video-thumbnail">Thumbnail URL (opsiyonel)</label>
+<input type="url" id="video-thumbnail" name="thumbnail" placeholder="https://example.com/image.jpg">
+</div>
+
+<button type="submit" class="upload-btn">Video Yükle</button>
+</form>
+</div>
+
+<div class="my-videos-section">
+<h2>📹 Yüklediğim Videolar</h2>
+<div class="video-list">
+{% if user_videos %}
+{% for video in user_videos %}
+<div class="video-item">
+<div class="video-item-thumbnail">
+<img src="{{ video.thumbnail or 'https://via.placeholder.com/200x112?text=Video' }}" alt="{{ video.title }}">
+</div>
+<div class="video-item-info">
+<div>
+<h3 class="video-item-title">{{ video.title }}</h3>
+<p class="video-item-description">{{ video.description or 'Açıklama bulunmuyor' }}</p>
+<div class="video-item-meta">
+<span>👁 {{ video.views or 0 }} görüntülenme</span>
+<span>📅 {{ video.created_at or 'Tarih yok' }}</span>
+<span>🏷️ {{ video.category or 'Kategori yok' }}</span>
+</div>
+</div>
+<div class="video-actions">
+<button class="btn-edit" onclick="editVideo('{{ video.id }}')">✏️ Düzenle</button>
+<button class="btn-delete" onclick="deleteVideo('{{ video.id }}')">🗑️ Sil</button>
+</div>
+</div>
+</div>
+{% endfor %}
+{% else %}
+<div class="empty-state">
+<div class="empty-icon">📹</div>
+<h3>Henüz video yüklemediniz</h3>
+<p>Yukarıdaki formdan ilk videonuzu yükleyebilirsiniz!</p>
+</div>
+{% endif %}
+</div>
+</div>
+</main>
+
+<footer>
+<div class="container">
+<p>&copy; 2024 Video Galerisi. Tüm hakları saklıdır.</p>
+</div>
+</footer>
+
+<script>
+function editVideo(videoId) {
+    alert('Video düzenleme özelliği yakında eklenecek. Video ID: ' + videoId);
+    // Burada video düzenleme sayfasına yönlendirme yapılabilir
+    // window.location.href = '/edit/' + videoId;
+}
+
+function deleteVideo(videoId) {
+    if (confirm('Bu videoyu silmek istediğinizden emin misiniz?')) {
+        fetch('/delete/' + videoId, {
+            method: 'POST',
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Video başarıyla silindi!');
+                location.reload();
+            } else {
+                alert('Video silinirken bir hata oluştu.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Bir hata oluştu.');
+        });
+    }
+}
+
+// Dosya seçildiğinde adını göster
+document.getElementById('video-file').addEventListener('change', function(e) {
+    const fileName = e.target.files[0]?.name;
+    if (fileName) {
+        const label = document.querySelector('.file-input-label span:last-child');
+        label.textContent = fileName;
+    }
+});
+</script>
+</body>
+</html>
