@@ -16,4 +16,17 @@ form.addEventListener("submit", async (e) => {
 
 // şimdi multer gelen dosyayı pars edecek sunucu için
 
-const express
+const express = require("express");
+const multer = require("multer");
+
+const app = express();
+const upload = multer({ dest: "uploads/"});
+
+app.post("/upload", upload.single("video"), (req, res) => {
+    console.log(req.file);
+    res.send("Video got!");
+})
+
+app.listen(3000);
+
+// multer gelen binaryleri boundary'leri okudu diske yazdı
