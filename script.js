@@ -30,3 +30,13 @@ app.post("/upload", upload.single("video"), (req, res) => {
 app.listen(3000);
 
 // multer gelen binaryleri boundary'leri okudu diske yazdı
+
+const upload = multer({
+    limits: {fileSize: 200 * 1024 * 1024},
+    fileFilter(req, file, cb) {
+        if (!file.mimetype.startsWith("video/")) {
+            cb(new Error("Not a video!"));
+        }
+        cb(null, true);
+    }
+}); // Güvenlik sağlıyormuş
