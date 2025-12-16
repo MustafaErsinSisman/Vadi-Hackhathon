@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kategoriler - Video Galerisi</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <h1>🎬 Video Galerisi</h1>
+                <nav>
+                    <a href="/" class="nav-link">Ana Sayfa</a>
+                    <a href="/categories" class="nav-link active">Kategoriler</a>
+                    <a href="/about" class="nav-link">Hakkında</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="video-section">
+            <h2 class="section-title">Kategoriler</h2>
+            <div class="video-grid">
+                {% if categories %}
+                    {% for category in categories %}
+                    <div class="video-card">
+                        <div class="video-thumbnail">
+                            <img src="{{ category.image or 'https://via.placeholder.com/320x180?text=Kategori' }}" alt="{{ category.name }}">
+                            <div class="play-overlay">
+                                <div class="play-icon">📁</div>
+                            </div>
+                        </div>
+                        <div class="video-info">
+                            <h3 class="video-title">{{ category.name }}</h3>
+                            <p class="video-description">{{ category.description or 'Açıklama bulunmuyor' }}</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state">
+                        <div class="empty-icon">📂</div>
+                        <h3>Henüz kategori yok</h3>
+                        <p>Veritabanında henüz kategori bulunmuyor. İlk kategoriyi ekleyin!</p>
+                    </div>
+                {% endif %}
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2024 Video Galerisi. Tüm hakları saklıdır.</p>
+        </div>
+    </footer>
+</body>
+</html>

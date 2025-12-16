@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hakkında - Video Galerisi</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <h1>🎬 Video Galerisi</h1>
+                <nav>
+                    <a href="/" class="nav-link">Ana Sayfa</a>
+                    <a href="/categories" class="nav-link">Kategoriler</a>
+                    <a href="/about" class="nav-link active">Hakkında</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="video-section">
+            <h2 class="section-title">Hakkında</h2>
+            <div class="empty-state">
+                <p>🎬 Bu proje, kullanıcıların videolarını görebileceği ve kategorilere göre filtreleyebileceği modern bir video galerisi sistemidir.</p>
+                <p>Flask kullanılarak geliştirilmiş olup, kullanıcı dostu arayüz ve responsive tasarım sunar.</p>
+                <p>© 2024 Video Galerisi</p>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2024 Video Galerisi. Tüm hakları saklıdır.</p>
+        </div>
+    </footer>
+</body>
+</html>
