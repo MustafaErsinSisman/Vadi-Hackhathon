@@ -1,6 +1,13 @@
 class VideoUploader {
     constructor() {
         this.currentPage = window.location.pathname;
+        this.chunkSize = 5 * 1024 * 1024; // 5MB chunks
+        this.chunks = [];
+        this.file = null;
+        this.fileId = null;
+        this.totalChunks = 0;
+        this.uploadedChunks = 0;
+        this.uploadInProgress = false;
         this.init();
     }
 
@@ -13,88 +20,10 @@ class VideoUploader {
     }
 
     initUploadPage() {
-        const dropArea = document.getElementById('drop-area');
-        const fileInput = document.getElementById('file-input');
-        const uploadBtn = document.getElementById('upload-btn');
-        const cancelBtn = document.getElementById('cancel-btn');
-        const previewPlayer = document.getElementById('preview-player');
-        const videoPreview = document.getElementById('video-preview');
+        // ... (önceki kod aynı, sadece upload işlemi değişecek)
         
-        let selectedFile = null;
-
-        // Drag & drop events
-        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-            dropArea.addEventListener(eventName, preventDefaults, false);
-        });
-
-        function preventDefaults(e) {
-            e.preventDefault();
-            e.stopPropagation();
-        }
-
-        ['dragenter', 'dragover'].forEach(eventName => {
-            dropArea.addEventListener(eventName, highlight, false);
-        });
-
-        ['dragleave', 'drop'].forEach(eventName => {
-            dropArea.addEventListener(eventName, unhighlight, false);
-        });
-
-        function highlight() {
-            dropArea.classList.add('drag-over');
-        }
-
-        function unhighlight() {
-            dropArea.classList.remove('drag-over');
-        }
-
-        // File drop
-        dropArea.addEventListener('drop', (e) => {
-            const dt = e.dataTransfer;
-            const files = dt.files;
-            if (files.length > 0) {
-                handleFileSelect(files[0]);
-            }
-        });
-
-        // File input change
-        fileInput.addEventListener('change', (e) => {
-            if (e.target.files.length > 0) {
-                handleFileSelect(e.target.files[0]);
-            }
-        });
-
-        // File selection handler
-        const handleFileSelect = (file) => {
-            if (!file.type.startsWith('video/')) {
-                this.showMessage('Lütfen bir video dosyası seçin', 'error');
-                return;
-            }
-
-            if (file.size > 100 * 1024 * 1024) { // 100MB limit
-                this.showMessage('Dosya boyutu 100MB\'dan küçük olmalıdır', 'error');
-                return;
-            }
-
-            selectedFile = file;
-            
-            // Show file info
-            document.getElementById('file-name').textContent = file.name;
-            document.getElementById('file-size').textContent = this.formatFileSize(file.size);
-            document.getElementById('file-type').textContent = file.type;
-
-            // Show preview
-            videoPreview.style.display = 'block';
-            previewPlayer.src = URL.createObjectURL(file);
-
-            // Enable upload button
-            uploadBtn.disabled = false;
-            
-            this.showMessage('Video seçildi. Bilgileri doldurup yükleyebilirsiniz.', 'success');
-        };
-
-        // Upload button click
-        uploadBtn.addEventListener('click', () => {
+        // Upload button click - GÜNCELLENDİ
+        uploadBtn.addEventListener('click', async () => {
             if (!selectedFile) return;
             
             const title = document.getElementById('title').value.trim();
@@ -105,113 +34,169 @@ class VideoUploader {
                 return;
             }
 
-            this.uploadVideo(selectedFile, title, description);
-        });
-
-        // Cancel button
-        cancelBtn.addEventListener('click', () => {
-            window.location.href = 'index.html';
-        });
-
-        // Click drop area to select file
-        dropArea.addEventListener('click', () => {
-            fileInput.click();
+            // Büyük dosyalar için chunked upload
+            if (selectedFile.size > 10 * 1024 * 1024) { // 10MB'dan büyükse
+                await this.uploadChunked(selectedFile, title, description);
+            } else {
+                await this.uploadSingle(selectedFile, title, description);
+            }
         });
     }
 
-    async uploadVideo(file, title, description) {
-        const formData = new FormData();
-        formData.append('video', file);
-        formData.append('title', title);
-        formData.append('description', description);
-
+    async uploadChunked(file, title, description) {
+        this.file = file;
+        this.totalChunks = Math.ceil(file.size / this.chunkSize);
+        this.uploadedChunks = 0;
+        this.chunks = [];
+        
+        // Benzersiz bir file ID oluştur
+        this.fileId = Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        
         const progressBar = document.getElementById('progress-fill');
         const progressText = document.getElementById('progress-text');
         const progressContainer = document.querySelector('.progress-container');
         const uploadBtn = document.getElementById('upload-btn');
-
-        // Show progress bar
+        
         progressContainer.style.display = 'block';
         uploadBtn.disabled = true;
+        this.uploadInProgress = true;
         
         try {
-            const response = await fetch('http://localhost:5000/upload', {
-                method: 'POST',
-                body: formData
-            });
-
-            const data = await response.json();
+            // Önce video metadata'sını gönder
+            const metadata = {
+                fileId: this.fileId,
+                filename: file.name,
+                totalSize: file.size,
+                totalChunks: this.totalChunks,
+                chunkSize: this.chunkSize,
+                title: title,
+                description: description,
+                mimeType: file.type
+            };
             
-            if (data.success) {
-                this.showMessage('✅ Video başarıyla yüklendi! Ana sayfaya yönlendiriliyorsunuz...', 'success');
-                
-                // Redirect to home page after 2 seconds
-                setTimeout(() => {
-                    window.location.href = 'index.html';
-                }, 2000);
-            } else {
-                throw new Error(data.error || 'Yükleme başarısız');
+            const metadataResponse = await fetch('http://localhost:5000/api/init-upload', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(metadata)
+            });
+            
+            const metadataResult = await metadataResponse.json();
+            
+            if (!metadataResult.success) {
+                throw new Error(metadataResult.error);
             }
+            
+            // Tüm chunk'ları yükle
+            for (let chunkIndex = 0; chunkIndex < this.totalChunks; chunkIndex++) {
+                if (!this.uploadInProgress) {
+                    throw new Error('Yükleme kullanıcı tarafından durduruldu');
+                }
+                
+                const start = chunkIndex * this.chunkSize;
+                const end = Math.min(start + this.chunkSize, file.size);
+                const chunk = file.slice(start, end);
+                
+                const chunkData = new FormData();
+                chunkData.append('fileId', this.fileId);
+                chunkData.append('chunkIndex', chunkIndex);
+                chunkData.append('totalChunks', this.totalChunks);
+                chunkData.append('chunk', chunk);
+                chunkData.append('filename', file.name);
+                
+                let retryCount = 0;
+                const maxRetries = 3;
+                
+                while (retryCount < maxRetries) {
+                    try {
+                        const response = await fetch('http://localhost:5000/api/upload-chunk', {
+                            method: 'POST',
+                            body: chunkData
+                        });
+                        
+                        const result = await response.json();
+                        
+                        if (result.success) {
+                            this.uploadedChunks++;
+                            
+                            // Progress güncelle
+                            const percent = Math.round((this.uploadedChunks / this.totalChunks) * 100);
+                            progressBar.style.width = percent + '%';
+                            progressText.textContent = `%${percent} (${this.uploadedChunks}/${this.totalChunks} parça)`;
+                            break;
+                        } else {
+                            throw new Error(result.error);
+                        }
+                    } catch (error) {
+                        retryCount++;
+                        if (retryCount === maxRetries) {
+                            throw new Error(`Chunk ${chunkIndex} yüklenemedi: ${error.message}`);
+                        }
+                        await this.sleep(1000 * retryCount); // Exponential backoff
+                    }
+                }
+            }
+            
+            // Tüm chunk'lar yüklendi, birleştirme ve işleme için istek gönder
+            const completeResponse = await fetch('http://localhost:5000/api/complete-upload', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    fileId: this.fileId,
+                    title: title,
+                    description: description
+                })
+            });
+            
+            const completeResult = await completeResponse.json();
+            
+            if (completeResult.success) {
+                this.showMessage('✅ Video başarıyla yüklendi ve işleniyor!', 'success');
+                
+                // İşlem durumunu takip et
+                this.trackProcessing(completeResult.videoId);
+            } else {
+                throw new Error(completeResult.error);
+            }
+            
         } catch (error) {
             this.showMessage(`❌ Hata: ${error.message}`, 'error');
             progressContainer.style.display = 'none';
             uploadBtn.disabled = false;
+            this.uploadInProgress = false;
         }
     }
 
-    async loadVideos() {
-        const videoList = document.getElementById('video-list');
-        
-        try {
-            const response = await fetch('http://localhost:5000/videos');
-            const videos = await response.json();
-
-            if (videos.length === 0) {
-                videoList.innerHTML = '<div class="loading">Henüz video yüklenmedi. İlk video yükleyen siz olun!</div>';
-                return;
+    async trackProcessing(videoId) {
+        const checkInterval = setInterval(async () => {
+            try {
+                const response = await fetch(`http://localhost:5000/api/video-status/${videoId}`);
+                const data = await response.json();
+                
+                if (data.status === 'processed') {
+                    clearInterval(checkInterval);
+                    this.showMessage('✅ Video işlendi! Ana sayfaya yönlendiriliyorsunuz...', 'success');
+                    
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 2000);
+                } else if (data.status === 'error') {
+                    clearInterval(checkInterval);
+                    this.showMessage(`❌ Video işlenirken hata: ${data.error}`, 'error');
+                }
+                // "processing" durumunda devam et
+            } catch (error) {
+                console.error('Durum kontrol hatası:', error);
             }
-
-            videoList.innerHTML = videos.map(video => `
-                <div class="video-card">
-                    <div class="video-thumbnail">
-                        🎬
-                    </div>
-                    <div class="video-content">
-                        <h3>${video.title}</h3>
-                        <p><strong>Dosya:</strong> ${video.filename}</p>
-                        <p><strong>Boyut:</strong> ${this.formatFileSize(video.size)}</p>
-                        <p><strong>Tarih:</strong> ${new Date(video.uploaded).toLocaleDateString('tr-TR')}</p>
-                        ${video.description ? `<p>${video.description}</p>` : ''}
-                    </div>
-                </div>
-            `).join('');
-        } catch (error) {
-            videoList.innerHTML = '<div class="loading">Videolar yüklenirken hata oluştu. Server çalışıyor mu?</div>';
-        }
+        }, 2000); // 2 saniyede bir kontrol et
     }
 
-    showMessage(text, type = 'info') {
-        const messageDiv = document.getElementById('message');
-        messageDiv.textContent = text;
-        messageDiv.className = `message ${type}`;
-        
-        if (type !== 'success') {
-            setTimeout(() => {
-                messageDiv.style.display = 'none';
-            }, 5000);
-        }
+    async uploadSingle(file, title, description) {
+        // ... (önceki single upload kodu)
     }
 
-    formatFileSize(bytes) {
-        if (bytes === 0) return '0 Bytes';
-        const k = 1024;
-        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
     }
+
+    // ... (diğer fonksiyonlar aynı)
 }
-
-// Initialize when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
-    new VideoUploader();
-});
