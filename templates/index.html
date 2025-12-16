@@ -3,56 +3,69 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Video Platformu Ana Sayfa</title>
+    <title>Video Galerisi</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1 class="logo">🎥 VideoHub</h1>
-            <nav>
-                {% if session.get('username') %}
-                    <span>Giriş yapan: <strong>{{ session.username }}</strong> ({{ session.role }})</span>
-                    <a href="{{ url_for('auth.logout') }}">Çıkış</a>
-                {% else %}
-                    <a href="{{ url_for('auth.login') }}">Giriş</a>
-                {% endif %}
-            </nav>
-        </header>
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <h1>🎬 Video Galerisi</h1>
+                <nav>
+                    <a href="/" class="nav-link active">Ana Sayfa</a>
+                    <a href="#" class="nav-link">Kategoriler</a>
+                    <a href="#" class="nav-link">Hakkında</a>
+                </nav>
+            </div>
+        </div>
+    </header>
 
-        <main class="main-content">
-            <h2 class="welcome-message">Geri Geldiniz! Yeni videolarınızı yükleyin.</h2>
-            
-            <section class="upload-section">
-                {% if session.get('role') == 'Admin' %}
-                <a href="{{ url_for('upload.upload_page') }}" class="upload-button">
-                    ⬆️ Video Yükle
-                </a>
-                {% elif session.get('username') %}
-                <p>Video yüklemek için Admin olmalısınız.</p>
-                {% else %}
-                <p><a href="{{ url_for('auth.login', next=url_for('upload.upload_page')) }}">Giriş yapın</a> veya hesap oluşturun.</p>
-                {% endif %}
-                <p>Yeni içeriklerinizi dünyanın dört bir yanındaki izleyicilerle paylaşın.</p>
-            </section>
+    <main class="container">
+        <section class="search-section">
+            <div class="search-bar">
+                <input type="text" placeholder="Video ara..." class="search-input">
+                <button class="search-btn">Ara</button>
+            </div>
+        </section>
 
-            <section class="start-section">
-                {% if not session.get('username') %}
-                <a class="start-button" href="{{ url_for('auth.login', next=url_for('main.index')) }}">Başla</a>
+        <section class="video-section">
+            <h2 class="section-title">Tüm Videolar</h2>
+            <div class="video-grid">
+                {% if videos %}
+                    {% for video in videos %}
+                    <div class="video-card">
+                        <div class="video-thumbnail">
+                            <img src="{{ video.thumbnail or 'https://via.placeholder.com/320x180?text=Video' }}" alt="{{ video.title }}">
+                            <div class="video-duration">{{ video.duration or '00:00' }}</div>
+                            <div class="play-overlay">
+                                <div class="play-icon">▶</div>
+                            </div>
+                        </div>
+                        <div class="video-info">
+                            <h3 class="video-title">{{ video.title }}</h3>
+                            <p class="video-description">{{ video.description or 'Açıklama bulunmuyor' }}</p>
+                            <div class="video-meta">
+                                <span class="views">👁 {{ video.views or 0 }} görüntülenme</span>
+                                <span class="date">📅 {{ video.created_at or 'Tarih yok' }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
                 {% else %}
-                <a class="start-button" href="{{ url_for('main.index') }}">Başla</a>
+                    <div class="empty-state">
+                        <div class="empty-icon">📹</div>
+                        <h3>Henüz video yok</h3>
+                        <p>Veritabanında henüz video bulunmuyor. İlk videoyu ekleyin!</p>
+                    </div>
                 {% endif %}
-            </section>
+            </div>
+        </section>
+    </main>
 
-            <section class="featured-content">
-                <h3>Öne Çıkan Videolar</h3>
-                <div class="video-list">
-                    <div class="video-item">Video 1 Önizleme</div>
-                    <div class="video-item">Video 2 Önizleme</div>
-                    <div class="video-item">Video 3 Önizleme</div>
-                </div>
-            </section>
-        </main>
-    </div>
+    <footer>
+        <div class="container">
+            <p>&copy; 2024 Video Galerisi. Tüm hakları saklıdır.</p>
+        </div>
+    </footer>
 </body>
 </html>
