@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for
 
 USERS = {
-    "BEAR": {"username": "BEAR", "role": "Admin", "status": "Active"},
+    "YUNUS": {"username": "YUNUS", "role": "Admin", "status": "Active"},
     "ALICE": {"username": "ALICE", "role": "User", "status": "Offline"},
     "BOB": {"username": "BOB", "role": "Moderator", "status": "Active"},
 }

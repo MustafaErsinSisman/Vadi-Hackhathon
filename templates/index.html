@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Platformu Ana Sayfa</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1 class="logo">🎥 VideoHub</h1>
+            <nav>
+            </nav>
+        </header>
+
+        <main class="main-content">
+            <h2 class="welcome-message">Geri Geldiniz! Yeni videolarınızı yükleyin.</h2>
+            
+            <section class="upload-section">
+                <a href="{{ url_for('upload.upload_video') }}" class="upload-button">
+                    ⬆️ Video Yükle
+                </a>
+                <p>Yeni içeriklerinizi dünyanın dört bir yanındaki izleyicilerle paylaşın.</p>
+            </section>
+
+            <section class="featured-content">
+                <h3>Öne Çıkan Videolar</h3>
+                <div class="video-list">
+                    <div class="video-item">Video 1 Önizleme</div>
+                    <div class="video-item">Video 2 Önizleme</div>
+                    <div class="video-item">Video 3 Önizleme</div>
+                </div>
+            </section>
+        </main>
+    </div>
+</body>
+</html>

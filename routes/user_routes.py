@@ -1,6 +1,12 @@
 from flask import Blueprint, render_template
 from flask import redirect, url_for, request
 
+USERS = {
+    "YUNUS": {"username": "YUNUS", "role": "Admin", "status": "Active"},
+    "ALICE": {"username": "ALICE", "role": "User", "status": "Offline"},
+    "BOB": {"username": "BOB", "role": "Moderator", "status": "Active"},
+}
+
 user_bp = Blueprint('user', __name__)
 
 @user_bp.route("/user/<username>")
