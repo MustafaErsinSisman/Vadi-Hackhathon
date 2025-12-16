@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>User Profile</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+    <h2>User Profile</h2>
+
+    <div style="margin-top: 30px;">
+        <p><strong>Username:</strong> {{ user.username }}</p>
+        <p><strong>Role:</strong> {{ user.role }}</p>
+        <p><strong>Status:</strong> {{ user.status }}</p>
+    </div>
+
+    <br>
+
+    <a href="/">
+        <button>Back to Home</button>
+    </a>
+
+</body>
+</html>
