@@ -1,7 +1,0 @@
-{
-    "max_file_size": 2147483648,
-    "chunk_size": 5242880,
-    "allowed_extensions": ["mp4", "avi", "mov", "mkv", "webm"],
-    "ffmpeg_path": "/usr/bin/ffmpeg",
-    "ffprobe_path": "/usr/bin/ffprobe"
-}
