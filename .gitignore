@@ -1,5 +1,12 @@
+# Node.js
 node_modules/
 backend/node_modules/
 worker/node_modules/
-.env
 npm-debug.log
+
+# Environment Variables (Sifreler gitmesin)
+.env
+
+# OS Files
+.DS_Store
+Thumbs.db
