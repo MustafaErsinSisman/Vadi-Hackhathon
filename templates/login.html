@@ -5,9 +5,21 @@
 </head>
 <body>
     <h2>Login</h2>
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <ul class="flashes">
+        {% for msg in messages %}
+          <li>{{ msg }}</li>
+        {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+
     <form method="POST">
         <input type="text" name="username" placeholder="enter username">
         <button type="submit">Gönder</button>
     </form>
+
+    <p><a href="{{ url_for('main.index') }}">Ana sayfaya dön</a></p>
 </body>
 </html>

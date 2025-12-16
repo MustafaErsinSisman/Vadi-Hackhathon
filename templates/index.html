@@ -11,6 +11,12 @@
         <header>
             <h1 class="logo">🎥 VideoHub</h1>
             <nav>
+                {% if session.get('username') %}
+                    <span>Giriş yapan: <strong>{{ session.username }}</strong> ({{ session.role }})</span>
+                    <a href="{{ url_for('auth.logout') }}">Çıkış</a>
+                {% else %}
+                    <a href="{{ url_for('auth.login') }}">Giriş</a>
+                {% endif %}
             </nav>
         </header>
 
@@ -18,10 +24,24 @@
             <h2 class="welcome-message">Geri Geldiniz! Yeni videolarınızı yükleyin.</h2>
             
             <section class="upload-section">
-                <a href="{{ url_for('upload.upload_video') }}" class="upload-button">
+                {% if session.get('role') == 'Admin' %}
+                <a href="{{ url_for('upload.upload_page') }}" class="upload-button">
                     ⬆️ Video Yükle
                 </a>
+                {% elif session.get('username') %}
+                <p>Video yüklemek için Admin olmalısınız.</p>
+                {% else %}
+                <p><a href="{{ url_for('auth.login', next=url_for('upload.upload_page')) }}">Giriş yapın</a> veya hesap oluşturun.</p>
+                {% endif %}
                 <p>Yeni içeriklerinizi dünyanın dört bir yanındaki izleyicilerle paylaşın.</p>
+            </section>
+
+            <section class="start-section">
+                {% if not session.get('username') %}
+                <a class="start-button" href="{{ url_for('auth.login', next=url_for('main.index')) }}">Başla</a>
+                {% else %}
+                <a class="start-button" href="{{ url_for('main.index') }}">Başla</a>
+                {% endif %}
             </section>
 
             <section class="featured-content">

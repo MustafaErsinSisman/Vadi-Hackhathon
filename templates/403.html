@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Access Denied</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>body{font-family:Arial,Helvetica,sans-serif;padding:40px}</style>
+</head>
+<body>
+    <h2>403 - Erişim Reddedildi</h2>
+    <p>Bu içeriğe erişmek için yetkiniz yok. Giriş yaptıysanız yetkinizin olduğundan emin olun veya Admin ile iletişime geçin.</p>
+    <p><a href="{{ url_for('main.index') }}">Ana sayfaya dön</a></p>
+</body>
+</html>

@@ -6,6 +6,14 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
+    <nav>
+        {% if session.get('username') %}
+            <span>Giriş yapan: <strong>{{ session.username }}</strong> ({{ session.role }})</span>
+            <a href="{{ url_for('auth.logout') }}">Çıkış</a>
+        {% else %}
+            <a href="{{ url_for('auth.login') }}">Giriş</a>
+        {% endif %}
+    </nav>
 
     <h2>User Profile</h2>
 
