@@ -1,0 +1,75 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: hackathon-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+      POSTGRES_DB: videodb
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - hackathon-net
+
+  redis:
+    image: redis:alpine
+    container_name: hackathon-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - hackathon-net
+
+  api:
+    build: ./backend
+    container_name: hackathon-api
+    ports:
+      - "3000:3000"
+    environment:
+      - DB_HOST=db
+      - DB_USER=postgres
+      - DB_PASS=postgrespassword
+      - REDIS_HOST=redis
+      - PORT=3000
+    depends_on:
+      - db
+      - redis
+    networks:
+      - hackathon-net
+
+  worker:
+    build: ./worker
+    container_name: hackathon-worker
+    environment:
+      - REDIS_HOST=redis
+      - DB_HOST=db
+    depends_on:
+      - redis
+    networks:
+      - hackathon-net
+
+  prometheus:
+    image: prom/prometheus
+    container_name: hackathon-prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - hackathon-net
+
+  grafana:
+    image: grafana/grafana
+    container_name: hackathon-grafana
+    ports:
+      - "3001:3000"
+    networks:
+      - hackathon-net
+
+volumes:
+  postgres_data:
+
+networks:
+  hackathon-net:
+    driver: bridge
