@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Professional HLS Player</title>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <style>
+        body { background: #111; color: white; display: flex; justify-content: center; padding-top: 50px; font-family: sans-serif; }
+        .video-container { width: 80%; max-width: 1000px; }
+        video { width: 100%; border: 2px solid #333; border-radius: 8px; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
+    </style>
+</head>
+<body>
+    <div class="video-container">
+        <h2>Adaptive Bitrate Stream</h2>
+        <video id="video" controls></video>
+        <div id="status" style="margin-top: 10px; color: #aaa;">Status: Checking stream...</div>
+    </div>
+
+    <script>
+        const video = document.getElementById('video');
+        // 'video1' senin dönüştürdüğün klasörün adı olmalı
+        const videoSrc = '/live/video1/master.m3u8'; 
+        const status = document.getElementById('status');
+
+        if (Hls.isSupported()) {
+            const hls = new Hls({
+                // Bu ayar, kalite geçişlerinin daha pürüzsüz olmasını sağlar
+                capLevelToPlayerSize: true,
+                debug: false
+            });
+
+            hls.loadSource(videoSrc);
+            hls.attachMedia(video);
+            //////////////////////
+
+            hls.on(Hls.Events.LEVEL_SWITCHED, (event, data) => {
+            const level = hls.levels[data.level];
+            console.log(`[ABR Log]: İnternet hızına göre kalite değişti -> ${level.height}p`);
+            
+            // İstersen ekranda bir yazı olarak da gösterebilirsin:
+            document.getElementById('status').innerText = `Şu anki Kalite: ${level.height}p`;
+            });
+
+            //////////////////////
+            hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                status.innerText = "Status: Adaptive Stream Ready (HLS.js)";
+                video.play();
+            });
+
+            // Kalite değiştiğinde konsola yazdır (Test için)
+            hls.on(Hls.Events.LEVEL_SWITCHED, (event, data) => {
+                const level = hls.levels[data.level];
+                console.log(`Quality switched to: ${level.height}p`);
+            });
+
+        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+            // Safari gibi HLS'yi yerleşik olarak destekleyen tarayıcılar için
+            video.src = videoSrc;
+            status.innerText = "Status: Native HLS Playing";
+        }
+    </script>
+</body>
+</html>
