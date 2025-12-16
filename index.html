@@ -1,24 +1,38 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="tr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Videotub Case 5</title>
+    <title>Video Yükleme Platformu</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h1>Welcome to the Videotub!</h1>
+    <div class="container">
+        <header>
+            <h1>🎬 Video Yükleme Platformu</h1>
+            <p>Videolarınızı yükleyip paylaşın</p>
+        </header>
 
-    <h2>There is no content right now! Sorry :o</h2>
+        <main>
+            <section class="upload-section">
+                <a href="upload.html" class="upload-btn">📤 Video Yükle</a>
+                <p>Desteklenen formatlar: MP4, AVI, MOV, MKV (Max 100MB)</p>
+            </section>
 
-    <form
-        action="http://localhost:3000/upload"
-        method="POST"
-        enctype="multipart/form-data"
-    >
-        <input type="file" name="video" accept=".txt">
-        <button>Upload</button>
-    </form>
+            <section class="videos-section">
+                <h2>Son Yüklenen Videolar</h2>
+                <div id="video-list" class="video-grid">
+                    <!-- Videolar buraya gelecek -->
+                    <div class="loading">Videolar yükleniyor...</div>
+                </div>
+            </section>
+        </main>
 
-    <script src="./script.js"></script>
+        <footer>
+            <p>© 2024 Video Platformu | Mock Server Demo</p>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
 </body>
 </html>
