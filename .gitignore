@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Python
 __pycache__/
 *.py[cod]
@@ -31,3 +32,6 @@ Thumbs.db
 *.db
 *.sqlite
 *.sqlite3
+=======
+node_modules
+>>>>>>> origin/feat/backend

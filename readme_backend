@@ -1,0 +1,9 @@
+fileName: Hangi orijinal dosyanın işlendiğini takip etmeni sağlar.
+
+originalDuration: Videonun ham halinin kaç saniye olduğudur. Bu bilgi, oynatıcıda videonun sonunu göstermek için lazımdır.
+
+processingDuration: En kritik istatistik budur. FFmpeg'in bu videoyu parçalamak için ne kadar süre harcadığını gösterir. Eğer 1 dakikalık video 5 dakikada işleniyorsa, sunucunun işlemcisi (CPU) yetersiz demektir.
+
+resolutions: Videonun orijinal kalitesi her zaman 1080p olmayabilir. Bu liste, o video için hangi klasörlerin (kalitelerin) başarıyla oluşturulduğunu söyler.
+
+completedAt: İşlemin tam olarak ne zaman bittiğini tarih ve saat olarak tutar (Log yönetimi için).

@@ -2,6 +2,10 @@ import os
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from werkzeug.utils import secure_filename
 from datetime import datetime
+import shutil
+import json
+import urllib.request
+import urllib.error
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
@@ -53,6 +57,53 @@ def profile_page():
                          total_likes=total_likes)
 
 # --- YENİ ROTA EKLEMESİ BAŞLANGICI ---
+
+# In-memory chat storage for fallback when Socket.IO is not available
+chat_messages = {}
+_next_message_id = 1
+
+def _next_id():
+    global _next_message_id
+    _next_message_id += 1
+    return _next_message_id
+
+@app.route('/chat/<room>', methods=['POST'])
+def post_chat(room):
+    """Store a chat message and forward to Node.js broadcast endpoint if available."""
+    data = request.get_json() or {}
+    user = data.get('user') or request.remote_addr[:6]
+    message = data.get('message')
+    if not message:
+        return jsonify({'error': 'message required'}), 400
+
+    msg = {
+        'id': _next_id(),
+        'user': user,
+        'message': message,
+        'ts': datetime.utcnow().isoformat()
+    }
+    chat_messages.setdefault(room, []).append(msg)
+
+    # Forward to Node.js if available (include message id to avoid duplicates)
+    forward_flag = data.get('forward', True)
+    if forward_flag:
+        try:
+            node_url = os.environ.get('NODE_CONVERT_URL', 'http://localhost:3000')
+            req = urllib.request.Request(f"{node_url}/broadcast", data=json.dumps({'room': room, 'user': user, 'message': message, 'id': msg['id']}).encode('utf-8'), headers={'Content-Type': 'application/json'}, method='POST')
+            urllib.request.urlopen(req, timeout=1)
+        except Exception:
+            # Ignore forwarding errors; message is stored locally
+            pass
+
+    return jsonify(msg)
+
+@app.route('/chat/<room>', methods=['GET'])
+def get_chat(room):
+    """Return messages for a room after an optional 'since' id."""
+    since = int(request.args.get('since', 0))
+    msgs = [m for m in chat_messages.get(room, []) if m['id'] > since]
+    return jsonify({'messages': msgs})
+
 @app.route("/video/<int:video_id>")
 def video_detail(video_id):
     # video_id'ye göre videoyu user_videos listesinde bul
@@ -67,6 +118,12 @@ def video_detail(video_id):
     
     return render_template('video_detail.html', video=video)
 # --- YENİ ROTA EKLEMESİ SONU ---
+
+# (Not using a separate live page anymore) Features from the previous
+# "live" page (chat, stats panel) are integrated into the regular
+# `video_detail` page so uploaded videos get the same interactivity.
+
+
 
 @app.route("/upload", methods=['POST'])
 def upload_video():
@@ -105,6 +162,19 @@ def upload_video():
         }
         user_videos.append(video_data)
         
+        # Notify Node.js converter to process this file for HLS
+        try:
+            node_url = os.environ.get('NODE_CONVERT_URL', 'http://localhost:3000/convert')
+            payload = json.dumps({
+                'filename': filename,
+                'sourceUrl': request.host_url.rstrip('/') + url_for('static', filename=f'uploads/{filename}'),
+                'room': f"video_{video_data['id']}"
+            }).encode('utf-8')
+            req = urllib.request.Request(node_url, data=payload, headers={'Content-Type': 'application/json'}, method='POST')
+            urllib.request.urlopen(req, timeout=5)
+        except Exception as e:
+            print('Could not notify Node converter:', e)
+
         flash('Video başarıyla yüklendi!')
         return redirect(url_for('profile_page'))
     else:
