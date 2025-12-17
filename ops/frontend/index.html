@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Hackathon Video Yükleyici 🚀</title>
+    <style>
+        body { background-color: #1a1a1a; color: #fff; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        .box { background: #333; padding: 2rem; border-radius: 10px; text-align: center; width: 350px; }
+        button { background: #4CAF50; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; width: 100%; margin-top: 10px; }
+        button:disabled { background: #555; }
+        input { margin: 10px 0; width: 100%; }
+        .success { color: #4CAF50; margin-top: 10px; }
+        .error { color: #f44336; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h2>🎥 Video Yükle</h2>
+        <input type="file" id="videoInput" accept="video/*">
+        <button id="uploadBtn" onclick="uploadVideo()">Yükle 🚀</button>
+        <div id="status"></div>
+    </div>
+
+    <script>
+        async function uploadVideo() {
+            const file = document.getElementById('videoInput').files[0];
+            const status = document.getElementById('status');
+            const btn = document.getElementById('uploadBtn');
+
+            if (!file) return alert("Dosya seç!");
+
+            btn.disabled = true;
+            btn.innerText = "Yükleniyor...";
+            status.innerHTML = "";
+
+            const formData = new FormData();
+            formData.append('video', file);
+
+            try {
+                // Backend API'ye istek at
+                const res = await fetch('http://localhost:3000/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+
+                if (res.ok) {
+                    status.innerHTML = `<div class="success">✅ Başarılı!<br>Job ID: ${data.jobId}</div>`;
+                } else {
+                    status.innerHTML = `<div class="error">❌ Hata: ${data.error}</div>`;
+                }
+            } catch (e) {
+                status.innerHTML = `<div class="error">❌ Sunucuya Ulaşılamadı!</div>`;
+                console.error(e);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Yükle 🚀";
+            }
+        }
+    </script>
+</body>
+</html>

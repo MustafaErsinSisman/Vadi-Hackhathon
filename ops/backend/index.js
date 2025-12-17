@@ -5,15 +5,19 @@ const { v4: uuidv4 } = require('uuid');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
+// YENİ: Prisma'yı çağırdık
+const { PrismaClient } = require('@prisma/client');
 
 const app = express();
 const port = 3000;
 
-// 1. CORS: Frontend (React/Vue) rahatça erişsin diye
+// YENİ: Veritabanı bağlantısını başlat
+const prisma = new PrismaClient();
+
+// 1. CORS
 app.use(cors());
 
-// 2. Redis Bağlantısı (Mesajlaşma için)
-// Docker içinde olduğumuz için host: 'redis' yazıyoruz
+// 2. Redis Bağlantısı
 const redisClient = createClient({
     url: 'redis://redis:6379'
 });
@@ -23,19 +27,17 @@ const redisClient = createClient({
     console.log('Redis bağlantısı başarılı! 🔴');
 })();
 
-// 3. Dosya Yükleme Ayarları (Multer)
+// 3. Dosya Yükleme Ayarları
 const uploadDir = 'uploads/';
-// Klasör yoksa oluştur (Hata almamak için)
 if (!fs.existsSync(uploadDir)){
     fs.mkdirSync(uploadDir);
 }
 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, uploadDir); // Videoları buraya kaydet
+        cb(null, uploadDir);
     },
     filename: (req, file, cb) => {
-        // Dosya ismini benzersiz yap: "video.mp4" -> "550e8400-e29b... .mp4"
         const uniqueName = uuidv4() + path.extname(file.originalname);
         cb(null, uniqueName);
     }
@@ -45,12 +47,11 @@ const upload = multer({ storage: storage });
 
 // --- ENDPOINTLER ---
 
-// Sağlık Kontrolü
 app.get('/', (req, res) => {
     res.json({ status: 'OK', message: 'Video API Hazır ve Çalışıyor 🚀' });
 });
 
-// VİDEO YÜKLEME (Frontend buraya POST atacak)
+// VİDEO YÜKLEME
 app.post('/upload', upload.single('video'), async (req, res) => {
     try {
         if (!req.file) {
@@ -59,21 +60,33 @@ app.post('/upload', upload.single('video'), async (req, res) => {
 
         console.log(`🎥 Yeni video yüklendi: ${req.file.filename}`);
 
-        // Redis Kuyruğuna İş Emri Ekle
+        // --- DEĞİŞEN KISIM BURASI (Veritabanı Eklendi) ---
+        
+        // 1. Önce Veritabanına "PENDING" olarak kaydet
+        const newVideo = await prisma.video.create({
+            data: {
+                filename: req.file.filename,
+                status: 'PENDING'
+            }
+        });
+
+        console.log(`💾 Veritabanına yazıldı ID: ${newVideo.id}`);
+
+        // 2. Redis Kuyruğuna İş Emri Ekle (ID ile birlikte!)
         const jobData = {
+            id: newVideo.id, // <--- ARTIK ID GÖNDERİYORUZ
             filename: req.file.filename,
             originalName: req.file.originalname,
             path: req.file.path,
             uploadDate: new Date().toISOString()
         };
         
-        // 'video_queue' isimli listeye atıyoruz. Worker bunu dinleyecek.
         await redisClient.lPush('video_queue', JSON.stringify(jobData));
 
         res.status(200).json({
             message: 'Video başarıyla alındı ve işleme sırasına eklendi.',
             filename: req.file.filename,
-            jobId: uuidv4()
+            jobId: newVideo.id
         });
 
     } catch (error) {

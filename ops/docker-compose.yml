@@ -37,6 +37,8 @@ services:
     depends_on:
       - db
       - redis
+    volumes:
+      - ./backend/uploads:/app/uploads
     networks:
       - hackathon-net
 
@@ -48,6 +50,8 @@ services:
       - DB_HOST=db
     depends_on:
       - redis
+    volumes:
+      - ./backend/uploads:/app/uploads
     networks:
       - hackathon-net
 
