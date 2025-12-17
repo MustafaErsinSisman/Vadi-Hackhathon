@@ -38,6 +38,12 @@ generated/
 ops/backend/uploads/*
 !ops/backend/uploads/.gitkeep
 
+# Frontend Static Videos
+ops/frontend/static/*.mp4
+ops/frontend/static/*.mov
+ops/frontend/static/*.avi
+ops/frontend/static/*.mkv
+
 # Build Directories (if any)
 dist/
 build/
