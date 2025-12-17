@@ -48,3 +48,7 @@ ops/frontend/static/*.mkv
 dist/
 build/
 coverage/
+venv/
+__pycache__/
+routes/
+static/
