@@ -1,64 +1,83 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Professional HLS Player</title>
+    <title>Professional HLS Stream & Analytics</title>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <script src="/socket.io/socket.io.js"></script>
     <style>
-        body { background: #111; color: white; display: flex; justify-content: center; padding-top: 50px; font-family: sans-serif; }
-        .video-container { width: 80%; max-width: 1000px; }
-        video { width: 100%; border: 2px solid #333; border-radius: 8px; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
+        body { font-family: 'Segoe UI', sans-serif; background: #1a1a1a; color: white; margin: 0; display: flex; flex-direction: column; align-items: center; }
+        #layout { display: flex; gap: 20px; padding: 20px; max-width: 1200px; }
+        .video-section { flex: 2; }
+        .side-section { flex: 1; display: flex; flex-direction: column; gap: 20px; }
+        #chat-box { background: #2a2a2a; border-radius: 8px; height: 300px; display: flex; flex-direction: column; border: 1px solid #444; }
+        #messages { flex: 1; overflow-y: auto; padding: 10px; font-size: 14px; }
+        #input-area { display: flex; background: #333; padding: 5px; }
+        input { flex: 1; background: transparent; border: none; color: white; padding: 8px; outline: none; }
+        #stats-panel { background: #2a2a2a; padding: 15px; border-radius: 8px; border-left: 4px solid #007bff; }
+        .stat-item { margin-bottom: 8px; font-size: 13px; color: #ccc; }
+        .stat-item b { color: #fff; }
     </style>
 </head>
 <body>
-    <div class="video-container">
-        <h2>Adaptive Bitrate Stream</h2>
-        <video id="video" controls></video>
-        <div id="status" style="margin-top: 10px; color: #aaa;">Status: Checking stream...</div>
+    <h1>Case 5: Advanced Media Delivery</h1>
+    <div id="layout">
+        <div class="video-section">
+            <video id="video" controls width="100%" style="border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);"></video>
+            <div id="stats-panel" style="margin-top: 20px;">
+                <h3 style="margin-top:0">System Analysis Report</h3>
+                <div id="meta-content">Loading technical metadata...</div>
+            </div>
+        </div>
+
+        <div class="side-section">
+            <div id="chat-box">
+                <div id="messages"></div>
+                <div id="input-area"><input type="text" id="chatInput" placeholder="Write a message..."><button onclick="sendMsg()" style="background:#007bff; border:none; color:white; padding:5px 15px; cursor:pointer;">Send</button></div>
+            </div>
+        </div>
     </div>
 
     <script>
+        const socket = io();
+        const videoId = 'video1';
         const video = document.getElementById('video');
-        // 'video1' senin dönüştürdüğün klasörün adı olmalı
-        const videoSrc = '/live/video1/master.m3u8'; 
-        const status = document.getElementById('status');
+
+        socket.emit('join-room', videoId);
+
+        // Metadata'yı her 3 saniyede bir güncelle (Canlı hissi için)
+        setInterval(() => {
+            fetch(`/stream/${videoId}/metadata.json`).then(r => r.json()).then(data => {
+                document.getElementById('meta-content').innerHTML = `
+                    <div class="stat-item">💾 Disk Usage: <b>${data.totalOutputSize || '...'}</b></div>
+                    <div class="stat-item">⚡ Processing: <b>${data.processingDuration || '...'}</b></div>
+                    <div class="stat-item">📶 Avg. Quality: <b>${data.averageQuality || 'Searching...'}</b></div>
+                    <div class="stat-item">💬 Total Messages: <b>${data.totalMessages || 0}</b></div>
+                    <div class="stat-item">👥 Peak Viewers: <b>${data.peakViewers || 0}</b></div>
+                `;
+            }).catch(() => {});
+        }, 3000);
 
         if (Hls.isSupported()) {
-            const hls = new Hls({
-                // Bu ayar, kalite geçişlerinin daha pürüzsüz olmasını sağlar
-                capLevelToPlayerSize: true,
-                debug: false
-            });
-
-            hls.loadSource(videoSrc);
+            const hls = new Hls();
+            hls.loadSource(`/stream/${videoId}/master.m3u8`);
             hls.attachMedia(video);
-            //////////////////////
-
-            hls.on(Hls.Events.LEVEL_SWITCHED, (event, data) => {
-            const level = hls.levels[data.level];
-            console.log(`[ABR Log]: İnternet hızına göre kalite değişti -> ${level.height}p`);
-            
-            // İstersen ekranda bir yazı olarak da gösterebilirsin:
-            document.getElementById('status').innerText = `Şu anki Kalite: ${level.height}p`;
+            hls.on(Hls.Events.LEVEL_SWITCHED, (e, data) => {
+                socket.emit('quality-log', { videoId, quality: hls.levels[data.level].height });
             });
-
-            //////////////////////
-            hls.on(Hls.Events.MANIFEST_PARSED, () => {
-                status.innerText = "Status: Adaptive Stream Ready (HLS.js)";
-                video.play();
-            });
-
-            // Kalite değiştiğinde konsola yazdır (Test için)
-            hls.on(Hls.Events.LEVEL_SWITCHED, (event, data) => {
-                const level = hls.levels[data.level];
-                console.log(`Quality switched to: ${level.height}p`);
-            });
-
-        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-            // Safari gibi HLS'yi yerleşik olarak destekleyen tarayıcılar için
-            video.src = videoSrc;
-            status.innerText = "Status: Native HLS Playing";
         }
+
+        function sendMsg() {
+            const input = document.getElementById('chatInput');
+            if(input.value) { socket.emit('chat-message', { videoId, message: input.value }); input.value = ''; }
+        }
+
+        socket.on('new-message', (data) => {
+            const msgDiv = document.getElementById('messages');
+            msgDiv.innerHTML += `<div><span style="color:#007bff">User-${data.user}:</span> ${data.message}</div>`;
+            msgDiv.scrollTop = msgDiv.scrollHeight;
+        });
     </script>
 </body>
 </html>
