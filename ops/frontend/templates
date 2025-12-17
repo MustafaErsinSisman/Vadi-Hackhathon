@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ video.title }} - Video İzle</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <h1>🎬 Video Galerisi</h1>
+                <nav>
+                    <a href="/" class="nav-link">Ana Sayfa</a>
+                    <a href="{{ url_for('categories_page') }}" class="nav-link">Kategoriler</a>
+                    <a href="{{ url_for('about_page') }}" class="nav-link">Hakkında</a>
+                    <a href="{{ url_for('profile_page') }}" class="profile-icon" title="Profilim">Profil</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="container video-detail-page">
+        <section class="video-player-section">
+            <h2 class="video-title">{{ video.title }}</h2>
+            
+            <div class="main-video-player">
+                <video controls width="100%" poster="{{ video.thumbnail }}">
+                    <source src="{{ url_for('static', filename='uploads/' + video.filename) }}" type="video/mp4">
+                    Tarayıcınız video etiketini desteklemiyor.
+                </video>
+            </div>
+
+            <div class="video-meta-bar">
+                <span class="views">👁 {{ video.views or 0 }} Görüntülenme</span>
+                <span class="date">📅 {{ video.created_at or 'Tarih yok' }}</span>
+                <button class="like-btn">👍 {{ video.likes or 0 }} Beğen</button>
+            </div>
+
+            <div id="meta-panel" style="margin-top:12px; background:#fff; padding:12px; border-radius:8px;">
+                <h3 style="margin:0 0 8px 0;">Sistem Raporu</h3>
+                <div id="meta-content">
+                    <div class="stat-item">👁 Görüntülenme: <b>{{ video.views or 0 }}</b></div>
+                    <div class="stat-item">👍 Beğeni: <b>{{ video.likes or 0 }}</b></div>
+                    <div class="stat-item">📅 Yüklenme: <b>{{ video.created_at or 'Tarih yok' }}</b></div>
+                    <div class="stat-item" id="dynamic-stats">İstatistikler yükleniyor...</div>
+                </div>
+            </div>
+
+            <div id="chat-box" style="margin-top:12px; background:#fff; padding:8px; border-radius:8px;">
+                <div id="messages" style="height:200px; overflow:auto; padding:6px; border:1px solid #eee;"></div>
+                <div style="display:flex; gap:8px; margin-top:8px;">
+                    <input id="chatInput" style="flex:1; padding:8px;" placeholder="Mesaj yaz...">
+                    <button onclick="sendMsg()" style="padding:8px 12px; background:#667eea; color:#fff; border:none; border-radius:6px;">Gönder</button>
+                </div>
+            </div>
+
+            <hr>
+            
+            <div class="video-description-box">
+                <h3>Açıklama</h3>
+                <p>{{ video.description or 'Bu videonun bir açıklaması bulunmamaktadır.' }}</p>
+                <span class="category-tag">Kategori: {{ video.category or 'Belirtilmemiş' }}</span>
+            </div>
+
+            </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2024 Video Galerisi. Tüm hakları saklıdır.</p>
+        </div>
+    </footer>
+
+    <script>
+        (function(){
+            const LOCAL_CLIENT = 'http://localhost:3000/socket.io/socket.io.js';
+            const CDN_CLIENT = 'https://cdn.socket.io/4.5.4/socket.io.min.js';
+            const room = 'video_{{ video.id }}';
+            let socket = null;
+
+            function loadScript(src) {
+                return new Promise((resolve, reject) => {
+                    const s = document.createElement('script');
+                    s.src = src;
+                    s.async = true;
+                    s.onload = () => resolve();
+                    s.onerror = () => reject(new Error('Failed to load ' + src));
+                    document.head.appendChild(s);
+                });
+            }
+
+            function initSocket() {
+                try {
+                    socket = io('http://localhost:3000');
+                } catch (e) {
+                    console.warn('Socket.IO init error', e);
+                    document.getElementById('dynamic-stats').innerText = 'İstatistik servisine bağlanılamadı.';
+                    return;
+                }
+
+                socket.on('connect', () => {
+                    console.log('[Socket] connected', socket.id);
+                    socket.emit('join-room', room);
+                    document.getElementById('dynamic-stats').innerText = 'Bağlandı — istatistikler alınıyor...';
+                });
+
+                socket.on('connect_error', (err) => {
+                    console.warn('[Socket] connect_error', err);
+                    document.getElementById('dynamic-stats').innerText = 'İstatistik servisine bağlanılamadı.';
+                });
+
+                socket.on('stats-update', (data) => {
+                    const resolutions = (data.resolutions && Array.isArray(data.resolutions)) ? data.resolutions.map(r => r.name || (typeof r === 'string' ? r : '')).filter(Boolean).join(', ') : '';
+                    document.getElementById('dynamic-stats').innerHTML = `
+                        <div>💬 Toplam Mesaj: <b>${data.totalMessages || 0}</b></div>
+                        <div>👥 Mevcut İzleyici: <b>${data.currentViewers || 0}</b></div>
+                        <div>👥 Tepe İzleyici: <b>${data.peakViewers || 0}</b></div>
+                        <div>📶 Avg. Quality: <b>${data.averageQuality || 'N/A'}</b></div>
+                        ${resolutions ? `<div>🖼 Çözünürlükler: <b>${resolutions}</b></div>` : ''}
+                    `;
+                });
+
+                socket.on('new-message', (data) => {
+                    const msgs = document.getElementById('messages');
+                    // dedupe via id when provided
+                    if (data.id && seenIds.has(data.id)) return;
+                    if (data.id) seenIds.add(data.id);
+                    msgs.innerHTML += `<div><strong style="color:#007bff">User-${data.user}</strong>: ${data.message}</div>`;
+                    msgs.scrollTop = msgs.scrollHeight;
+                });
+
+                socket.on('disconnect', () => {
+                    document.getElementById('dynamic-stats').innerText = 'İstatistik servisine bağlantı kesildi.';
+                });
+            }
+
+            // Try local socket.io client first, then CDN fallback
+            loadScript(LOCAL_CLIENT).then(() => {
+                console.log('Loaded local socket.io client');
+                initSocket();
+            }).catch(() => {
+                console.warn('Local socket.io client failed, falling back to CDN');
+                loadScript(CDN_CLIENT).then(() => {
+                    console.log('Loaded CDN socket.io client');
+                    initSocket();
+                }).catch((err) => {
+                    console.error('Failed to load any socket.io client', err);
+                    document.getElementById('dynamic-stats').innerText = 'Chat/istatistik servisi yüklenemiyor.';
+                });
+            });
+
+            // message polling and POST fallback
+            let lastMsgId = 0;
+            const seenIds = new Set();
+
+            async function pollMessages() {
+                try {
+                    const res = await fetch(`/chat/${room}?since=${lastMsgId}`);
+                    const data = await res.json();
+                    if (data && data.messages && data.messages.length) {
+                        const msgs = document.getElementById('messages');
+                        data.messages.forEach(m => {
+                            if (!seenIds.has(m.id)) {
+                                msgs.innerHTML += `<div><strong style="color:#007bff">User-${m.user}</strong>: ${m.message}</div>`;
+                                msgs.scrollTop = msgs.scrollHeight;
+                                seenIds.add(m.id);
+                                lastMsgId = Math.max(lastMsgId, m.id);
+                            }
+                        });
+                    }
+                } catch (e) {
+                    // ignore polling errors
+                }
+            }
+
+            // start polling every 2s
+            setInterval(pollMessages, 2000);
+            // initial poll
+            pollMessages();
+
+            // sendMsg posts to Flask, gets an id, and then emits via socket for low latency (when available)
+            window.sendMsg = async function() {
+                const input = document.getElementById('chatInput');
+                const msgs = document.getElementById('messages');
+                if (!input.value) return;
+                const text = input.value;
+                const payload = { user: 'anon', message: text };
+
+                try {
+                    // if socket connected, ask Flask to store without forwarding (forward: false)
+                    const forward = !(socket && socket.connected) ;
+                    const res = await fetch(`/chat/${room}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...payload, forward }) });
+                    if (res.ok) {
+                        const m = await res.json();
+                        if (!seenIds.has(m.id)) {
+                            msgs.innerHTML += `<div><strong style="color:#999">Ben:</strong> ${m.message}</div>`;
+                            msgs.scrollTop = msgs.scrollHeight;
+                            seenIds.add(m.id);
+                            lastMsgId = Math.max(lastMsgId, m.id);
+                        }
+
+                        // If socket is connected, emit with assigned id for real-time delivery
+                        if (socket && socket.connected) {
+                            socket.emit('chat-message', { videoId: room, message: m.message, id: m.id });
+                        }
+                    } else {
+                        msgs.innerHTML += `<div style="color:#999"><strong>Hata:</strong> mesaj gönderilemedi</div>`;
+                    }
+                } catch (e) {
+                    msgs.innerHTML += `<div style="color:#999"><strong>Hata:</strong> mesaj gönderilemedi</div>`;
+                }
+
+                input.value = '';
+            };
+
+            // send on Enter key
+            (function() {
+                const input = document.getElementById('chatInput');
+                input.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        window.sendMsg();
+                    }
+                });
+            })();
+        })();
+    </script>
+</body>
+</html>
