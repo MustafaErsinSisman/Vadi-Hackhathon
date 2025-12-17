@@ -25,12 +25,15 @@ categories = [
 ]
 
 # Örnek kullanıcı videoları (normalde veritabanından gelecek)
+# id: 1, 2, 3... ile art arda giden id'ler olmalı
 user_videos = []
 
 @app.route('/')
 def index():
     videos = user_videos  # Tüm videoları göster
     return render_template('index.html', videos=videos)
+
+# ... (Diğer rotalarınız: categories_page, about_page, profile_page)
 
 @app.route("/categories")
 def categories_page():
@@ -48,6 +51,22 @@ def profile_page():
                          user_videos=user_videos,
                          total_views=total_views,
                          total_likes=total_likes)
+
+# --- YENİ ROTA EKLEMESİ BAŞLANGICI ---
+@app.route("/video/<int:video_id>")
+def video_detail(video_id):
+    # video_id'ye göre videoyu user_videos listesinde bul
+    video = next((v for v in user_videos if v['id'] == video_id), None)
+    
+    if video is None:
+        flash('Video bulunamadı!')
+        return redirect(url_for('index'))
+    
+    # Görüntülenme sayısını artır (Basit bir örnek)
+    video['views'] = video.get('views', 0) + 1
+    
+    return render_template('video_detail.html', video=video)
+# --- YENİ ROTA EKLEMESİ SONU ---
 
 @app.route("/upload", methods=['POST'])
 def upload_video():
@@ -75,7 +94,8 @@ def upload_video():
             'title': request.form.get('title'),
             'description': request.form.get('description'),
             'category': request.form.get('category'),
-            'thumbnail': request.form.get('thumbnail') or 'https://via.placeholder.com/320x180?text=Video',
+            # Eğer thumbnail gönderilmezse varsayılan bir görsel kullan
+            'thumbnail': request.form.get('thumbnail') or 'https://via.placeholder.com/320x180?text=Video+Thumbnail', 
             'filepath': filepath,
             'filename': filename,
             'duration': '00:00',

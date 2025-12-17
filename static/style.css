@@ -158,7 +158,6 @@ main {
 .video-thumbnail {
     position: relative;
     width: 100%;
-    padding-top: 56.25%; /* 16:9 Aspect Ratio */
     overflow: hidden;
     background: #f0f0f0;
 }
@@ -314,7 +313,7 @@ footer {
     justify-content: center;
     color: white;
     font-weight: bold;
-    font-size: 18px;
+    font-size: 11px;
     cursor: pointer;
     transition: transform 0.2s;
     text-decoration: none;

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ video.title }} - Video İzle</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <h1>🎬 Video Galerisi</h1>
+                <nav>
+                    <a href="/" class="nav-link">Ana Sayfa</a>
+                    <a href="{{ url_for('categories_page') }}" class="nav-link">Kategoriler</a>
+                    <a href="{{ url_for('about_page') }}" class="nav-link">Hakkında</a>
+                    <a href="{{ url_for('profile_page') }}" class="profile-icon" title="Profilim">Profil</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="container video-detail-page">
+        <section class="video-player-section">
+            <h2 class="video-title">{{ video.title }}</h2>
+            
+            <div class="main-video-player">
+                <video controls width="100%" poster="{{ video.thumbnail }}">
+                    <source src="{{ url_for('static', filename='uploads/' + video.filename) }}" type="video/mp4">
+                    Tarayıcınız video etiketini desteklemiyor.
+                </video>
+            </div>
+
+            <div class="video-meta-bar">
+                <span class="views">👁 {{ video.views or 0 }} Görüntülenme</span>
+                <span class="date">📅 {{ video.created_at or 'Tarih yok' }}</span>
+                <button class="like-btn">👍 {{ video.likes or 0 }} Beğen</button>
+            </div>
+            
+            <hr>
+            
+            <div class="video-description-box">
+                <h3>Açıklama</h3>
+                <p>{{ video.description or 'Bu videonun bir açıklaması bulunmamaktadır.' }}</p>
+                <span class="category-tag">Kategori: {{ video.category or 'Belirtilmemiş' }}</span>
+            </div>
+
+            </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2024 Video Galerisi. Tüm hakları saklıdır.</p>
+        </div>
+    </footer>
+</body>
+</html>

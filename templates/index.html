@@ -15,8 +15,7 @@
                     <a href="/" class="nav-link active">Ana Sayfa</a>
                     <a href="{{ url_for('categories_page') }}" class="nav-link">Kategoriler</a>
                     <a href="{{ url_for('about_page') }}" class="nav-link">Hakkında</a>
-                    <a href="{{ url_for('profile_page') }}" class="profile-icon" title="Profilim"></a>
-                </nav>
+                    <a href="{{ url_for('profile_page') }}" class="profile-icon" title="Profilim">Profil</a> </nav>
             </div>
         </div>
     </header>
@@ -28,43 +27,40 @@
                 <button class="search-btn">Ara</button>
             </div>
         </section>
-
         <section class="video-section">
             <h2 class="section-title">Tüm Videolar</h2>
-            <div class="video-grid">
-    {% if videos %}
-        {% for video in videos %}
-        <div class="video-card">
-            <div class="video-thumbnail">
-                {% if video.filepath %}
-                <video width="320" height="180" controls poster="{{ video.thumbnail }}">
-                    <source src="{{ url_for('static', filename='uploads/' + video.filename) }}" type="video/mp4">
-                    Tarayıcınız video etiketini desteklemiyor.
-                </video>
-                {% else %}
-                <img src="{{ video.thumbnail or 'https://via.placeholder.com/320x180?text=Video' }}" alt="{{ video.title }}">
-                {% endif %}
-            </div>
-            <div class="video-info">
-                <h3 class="video-title">{{ video.title }}</h3>
-                <p class="video-description">{{ video.description or 'Açıklama bulunmuyor' }}</p>
-                <div class="video-meta">
-                    <span class="views">👁 {{ video.views or 0 }} görüntülenme</span>
-                    <span class="date">📅 {{ video.created_at or 'Tarih yok' }}</span>
+        <div class="video-grid">
+            {% if videos %}
+                {% for video in videos %}
+                <a href="{{ url_for('video_detail', video_id=video.id) }}" class="video-card-link"> 
+                    <div class="video-card">
+                        <div class="video-thumbnail">
+                            <img 
+                                src="{{ video.thumbnail or 'https://via.placeholder.com/320x180?text=Video+Thumbnail' }}" 
+                                alt="{{ video.title }}"
+                                onerror="this.onerror=null; this.src='https://via.placeholder.com/320x180?text=Thumbnail+Yüklenemedi';"
+                            >
+                            <div class="play-overlay">▶</div> 
+                        </div>
+                        <div class="video-info">
+                            <h3 class="video-title">{{ video.title }}</h3>
+                            <p class="video-description">{{ video.description or 'Açıklama bulunmuyor' }}</p>
+                            <div class="video-meta">
+                                <span class="views">👁 {{ video.views or 0 }} görüntülenme</span>
+                                <span class="date">📅 {{ video.created_at or 'Tarih yok' }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">
+                    <div class="empty-icon">📹</div>
+                    <h3>Henüz video yok</h3>
+                    <p>Veritabanında henüz video bulunmuyor. İlk videoyu ekleyin!</p>
                 </div>
-            </div>
+            {% endif %}
         </div>
-        {% endfor %}
-    {% else %}
-        <div class="empty-state">
-            <div class="empty-icon">📹</div>
-            <h3>Henüz video yok</h3>
-            <p>Veritabanında henüz video bulunmuyor. İlk videoyu ekleyin!</p>
-        </div>
-    {% endif %}
-</div>
-
-            </div>
         </section>
     </main>
 
